@@ -1,0 +1,25 @@
+---
+- name: patch RHEL nodes
+  hosts: all
+  become: true
+  tasks:
+
+    - name: update all packages
+      ansible.builtin.dnf: 
+       name: "*"
+       state: latest
+       update_cache: true
+
+    - name: check if reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: reboot if required
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible patching playbook"
+        reboot_timeout: 300
+      when: reboot_required.stat.exists
+
+    - name: confirm nodes are back online
+      ansible.builtin.ping:
