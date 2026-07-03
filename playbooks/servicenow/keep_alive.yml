@@ -1,0 +1,24 @@
+---
+- name: Keep ServiceNow PDI Alive
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    snow_instance: "dev420412"
+
+  tasks:
+    - name: Ping ServiceNow PDI via REST API
+      ansible.builtin.uri:
+        url: "https://{{ snow_instance }}.service-now.com/api/now/table/incident?sysparm_limit=1"
+        method: GET
+        user: "{{ snow_username }}"
+        password: "{{ snow_password }}"
+        force_basic_auth: true
+        status_code: 200
+        validate_certs: true
+      register: result
+      no_log: true
+
+    - name: Confirm PDI is alive
+      ansible.builtin.debug:
+        msg: "ServiceNow PDI {{ snow_instance }} is alive — HTTP {{ result.status }}"
