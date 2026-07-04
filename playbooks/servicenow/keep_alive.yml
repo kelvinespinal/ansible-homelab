@@ -17,7 +17,7 @@
         status_code: 200
         validate_certs: true
       register: result
-      #no_log: true
+      no_log: true
 
     - name: Confirm PDI is alive
       ansible.builtin.debug:
