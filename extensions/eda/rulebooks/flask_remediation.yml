@@ -9,7 +9,7 @@
 
   rules:
     - name: Flask health check failed
-      condition: event.alerts[0].status == "firing"
+      condition: event.alerts is defined
       action:
         run_workflow_template:
           name: "Remediate Flask Service"
