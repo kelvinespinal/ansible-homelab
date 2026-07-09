@@ -8,8 +8,8 @@
         port: 5001
 
   rules:
-    - name: Flask health check failed
-      condition: event.alerts is defined
+    - name: Log all events
+      condition: event.alert.status is defined
       action:
         run_workflow_template:
           name: "Remediate Flask Service"
