@@ -1,0 +1,11 @@
+---
+- name: Remediate Flask Service
+  hosts: workerb.home.lab
+  gather_facts: false
+
+  tasks:
+    - name: Restart Flask container
+      containers.podman.podman_container:
+        name: flask-app
+        state: started
+        restart: true
