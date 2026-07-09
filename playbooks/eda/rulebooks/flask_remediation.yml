@@ -1,0 +1,16 @@
+---
+- name: Flask Health Check Remediation
+  hosts: all
+  sources:
+    - name: Listen for AlertManager webhooks
+      ansible.eda.alertmanager:
+        host: 0.0.0.0
+        port: 5001
+
+  rules:
+    - name: Flask health check failed
+      condition: event.alerts[0].status == "firing"
+      action:
+        run_workflow_template:
+          name: "Remediate Flask Service"
+          organization: "Default"
