@@ -1,0 +1,16 @@
+---
+- name: Simulate Service Failure
+  hosts: workerb.home.lab
+  gather_facts: false
+
+  tasks:
+    - name: Set Flask health to unhealthy
+      ansible.builtin.command:
+        cmd: podman exec flask-app bash -c "echo 'unhealthy' > /tmp/flask_health.txt"
+
+    - name: Confirm Flask is unhealthy
+      ansible.builtin.uri:
+        url: http://127.0.0.1:5000/health
+        status_code: 500
+      register: health_check
+      failed_when: health_check.status != 500
