@@ -5,7 +5,16 @@
 
   tasks:
     - name: Restart Flask container
-      containers.podman.podman_container:
-        name: flask-app
-        state: started
-        restart: true
+      ansible.builtin.command:
+        cmd: podman restart flask-app
+      become: true
+      become_user: kespinal
+
+    - name: Verify Flask is healthy
+      ansible.builtin.uri:
+        url: http://127.0.0.1:5000/health
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 5
+      until: health_check.status == 200
