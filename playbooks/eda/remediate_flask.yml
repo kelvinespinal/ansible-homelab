@@ -9,10 +9,15 @@
         cmd: podman stop flask-app
       ignore_errors: true
 
-    - name: Start Flask container
+    - name: Remove Flask container
       ansible.builtin.command:
-        cmd: podman start flask-app
+        cmd: podman rm flask-app
+      ignore_errors: true
 
+    - name: Start fresh Flask container
+      ansible.builtin.command:
+        cmd: podman run -d -p 5000:5000 --name flask-app localhost/flask-app:latest
+      
     - name: Verify Flask is healthy
       ansible.builtin.uri:
         url: http://127.0.0.1:5000/health
