@@ -4,11 +4,14 @@
   gather_facts: false
 
   tasks:
-    - name: Restart Flask container
+    - name: Stop Flask container
       ansible.builtin.command:
-        cmd: podman restart flask-app
-      become: true
-      become_user: kespinal
+        cmd: podman stop flask-app
+      ignore_errors: true
+
+    - name: Start Flask container
+      ansible.builtin.command:
+        cmd: podman start flask-app
 
     - name: Verify Flask is healthy
       ansible.builtin.uri:
