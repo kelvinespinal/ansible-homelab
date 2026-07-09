@@ -11,6 +11,6 @@
     - name: Flask health check failed
       condition: event.alert.status == "firing"
       action:
-        run_workflow_template:
+        run_job_template:
           name: "Remediate Flask Service"
           organization: "Default"
