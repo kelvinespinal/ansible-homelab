@@ -1,0 +1,62 @@
+---
+- name: Update Route 53 Dynamic DNS
+  hosts: localhost
+  gather_facts: false
+  vars:
+    hosted_zone_id: "Z0090782T8IL3LWHFOBA"
+    dns_records:
+      - control.kelvinespinal.com
+      - portal.kelvinespinal.com
+    ttl: 300
+
+  tasks:
+    - name: Get current public IP
+      ansible.builtin.uri:
+        url: https://api.ipify.org?format=json
+        return_content: true
+      register: ip_response
+
+    - name: Set current IP fact
+      ansible.builtin.set_fact:
+        current_ip: "{{ ip_response.json.ip }}"
+
+    - name: Get current Route 53 A record for control
+      amazon.aws.route53:
+        state: get
+        zone: kelvinespinal.com
+        record: control.kelvinespinal.com
+        type: A
+      register: current_dns
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
+        AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
+
+    - name: Set current DNS IP fact
+      ansible.builtin.set_fact:
+        dns_ip: "{{ current_dns.set.value | default('none') }}"
+
+    - name: Log when IP is unchanged
+      ansible.builtin.debug:
+        msg: "IP unchanged: {{ current_ip }} — no DNS update needed"
+      when: current_ip == dns_ip
+
+    - name: Update Route 53 A records
+      amazon.aws.route53:
+        state: present
+        zone: kelvinespinal.com
+        record: "{{ item }}"
+        type: A
+        ttl: "{{ ttl }}"
+        value: "{{ current_ip }}"
+        overwrite: true
+      loop: "{{ dns_records }}"
+      when: current_ip != dns_ip
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
+        AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
+
+    - name: Log DNS update
+      ansible.builtin.debug:
+        msg: "DNS updated: {{ item }} → {{ current_ip }} (was {{ dns_ip }})"
+      loop: "{{ dns_records }}"
+      when: current_ip != dns_ip
