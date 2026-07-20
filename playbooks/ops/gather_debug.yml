@@ -2,10 +2,26 @@
 - name: Gather System Debug Info
   hosts: all
   become: true
+  serial: 1
   tasks:
-    - name: Gather vmstat
-      ansible.builtin.command: vmstat 1 5
-      register: vmstat
+    - name: Gather uptime
+      ansible.builtin.command: uptime
+      register: uptime
+      changed_when: false
+
+    - name: Gather memory
+      ansible.builtin.command: free -h
+      register: memory
+      changed_when: false
+
+    - name: Gather disk usage
+      ansible.builtin.command: df -h
+      register: diskusage
+      changed_when: false
+
+    - name: Gather failed services
+      ansible.builtin.command: systemctl list-units --state=failed --no-legend
+      register: failed_services
       changed_when: false
 
     - name: Gather top CPU processes
@@ -18,54 +34,44 @@
       register: pssize
       changed_when: false
 
-    - name: Gather disk usage
-      ansible.builtin.command: df -h
-      register: diskusage
+    - name: Gather vmstat
+      ansible.builtin.command: vmstat 1 5
+      register: vmstat
       changed_when: false
 
-    - name: Gather failed systemd services
-      ansible.builtin.command: systemctl list-units --state=failed --no-legend
-      register: failed_services
-      changed_when: false
-
-    - name: Gather memory overview
-      ansible.builtin.command: free -h
-      register: memory
-      changed_when: false
-
-    - name: Gather system uptime and load
-      ansible.builtin.command: uptime
-      register: uptime
-      changed_when: false
-
-    - name: "==== SYSTEM: {{ inventory_hostname }} ===="
+    - name: "================================"
       ansible.builtin.debug:
-        msg: "Reporting on {{ inventory_hostname }} ({{ ansible_host | default(inventory_hostname) }})"
+        msg: "NODE: {{ inventory_hostname }}"
 
-    - name: "---- Uptime & Load Average ----"
+    - name: "---- Uptime & Load ----"
       ansible.builtin.debug:
         msg: "{{ uptime.stdout }}"
 
-    - name: "---- Memory Overview ----"
+    - name: "---- Memory ----"
       ansible.builtin.debug:
-        msg: "{{ memory.stdout_lines | join('\n') }}"
+        msg: "{{ item }}"
+      loop: "{{ memory.stdout_lines }}"
 
     - name: "---- Disk Usage ----"
       ansible.builtin.debug:
-        msg: "{{ diskusage.stdout_lines | join('\n') }}"
+        msg: "{{ item }}"
+      loop: "{{ diskusage.stdout_lines }}"
 
-    - name: "---- Failed Systemd Services ----"
+    - name: "---- Failed Services ----"
       ansible.builtin.debug:
         msg: "{{ failed_services.stdout if failed_services.stdout else 'No failed services' }}"
 
-    - name: "---- Top 5 CPU Consumers ----"
+    - name: "---- Top 5 CPU ----"
       ansible.builtin.debug:
-        msg: "{{ pscpu.stdout_lines[:6] | join('\n') }}"
+        msg: "{{ item }}"
+      loop: "{{ pscpu.stdout_lines[:6] }}"
 
-    - name: "---- Top 5 Memory Consumers ----"
+    - name: "---- Top 5 Memory ----"
       ansible.builtin.debug:
-        msg: "{{ pssize.stdout_lines[:6] | join('\n') }}"
+        msg: "{{ item }}"
+      loop: "{{ pssize.stdout_lines[:6] }}"
 
-    - name: "---- VMStat (CPU/Memory pressure) ----"
+    - name: "---- VMStat ----"
       ansible.builtin.debug:
-        msg: "{{ vmstat.stdout_lines | join('\n') }}"
+        msg: "{{ item }}"
+      loop: "{{ vmstat.stdout_lines }}"
